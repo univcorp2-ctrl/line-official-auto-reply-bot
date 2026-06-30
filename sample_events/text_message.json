@@ -1,0 +1,20 @@
+{
+  "destination": "Udestination",
+  "events": [
+    {
+      "type": "message",
+      "replyToken": "reply-token",
+      "source": {
+        "type": "user",
+        "userId": "Uuser"
+      },
+      "timestamp": 1700000000000,
+      "mode": "active",
+      "message": {
+        "id": "1",
+        "type": "text",
+        "text": "営業時間を教えて"
+      }
+    }
+  ]
+}
