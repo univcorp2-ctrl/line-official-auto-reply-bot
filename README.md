@@ -2,11 +2,34 @@
 
 LINE公式アカウントに届いたメッセージをWebhookで受け取り、LINE Messaging APIのReply APIで自動返信するFastAPIアプリです。まずは安全なルール返信だけで動き、必要に応じてOpenAI Responses APIを使ったAI返信に切り替えられます。
 
+## まず最初に読むもの
+
+初心者の方は、次の順番で読んでください。
+
+1. `docs/preparation.md` — LINE公式アカウント側で事前に準備するもの
+2. `docs/setup.md` — このBotを起動してLINEにWebhook URLを登録する手順
+3. `app/rules.yml` — 実際の自動返信文を編集するファイル
+
+## 最短の事前準備チェックリスト
+
+LINE側で事前に必要になるものは次の通りです。
+
+| 準備するもの | どこで用意するか | このBotで使う場所 |
+|---|---|---|
+| LINE公式アカウント | LINE Official Account Manager | ユーザーが友だち追加するアカウント |
+| Messaging APIチャネル | LINE Official Account ManagerでMessaging APIを有効化 | WebhookとReply APIの接続元 |
+| Channel Secret | LINE Developers Console > Basic settings | `LINE_CHANNEL_SECRET` |
+| Channel Access Token | LINE Developers Console > Messaging API | `LINE_CHANNEL_ACCESS_TOKEN` |
+| HTTPS公開URL | Render / Fly.io / Cloud Run / Railway / VPSなど | `https://your-domain.example.com/webhook` |
+| 任意: OpenAI API key | OpenAI Platform | `OPENAI_API_KEY` |
+
+最初は `REPLY_MODE=rules` でルール返信だけを動かすのがおすすめです。AI返信はLINEとの接続確認後に `REPLY_MODE=hybrid` へ切り替えます。
+
 ## 調査結果
 
 公式LINEには、LINE公式アカウント向けの **Messaging API** があります。ユーザーが友だち追加したりメッセージを送ったりすると、LINE PlatformがWebhook URLへHTTPS POSTを送ります。アプリ側はWebhookを受け取り、`/v2/bot/message/reply` にReply APIリクエストを送ることで返信できます。
 
-また、Webhookには `x-line-signature` ヘッダーが付くため、Channel Secretを使ったHMAC-SHA256署名検証を行ってから処理します。IP制限ではなく署名検証で保護するのが公式推奨です。
+また、Webhookには `x-line-signature` ヘッダーが付くため、Channel Secretを使ったHMAC-SHA256署名検証を行ってから処理します。IP制限ではなく署名検証で保護するのが基本です。
 
 LINEは公式SDKも公開しており、Pythonを含む複数言語で利用できます。このリポジトリでは依存を最小化し、署名検証とReply API呼び出しを明示的に実装しています。
 
@@ -63,7 +86,19 @@ sequenceDiagram
 
 ## 初期設定
 
-### 1. 環境変数を用意
+### 1. 事前準備を確認
+
+```text
+LINE公式アカウント
+Messaging APIチャネル
+Channel Secret
+Channel Access Token
+HTTPS公開URL
+```
+
+詳しくは `docs/preparation.md` を見てください。
+
+### 2. 環境変数を用意
 
 `.env.example` をコピーして `.env` を作ります。
 
@@ -88,7 +123,7 @@ OPENAI_MODEL=gpt-5.5
 
 ルール返信だけなら `OPENAI_API_KEY` は不要です。
 
-### 2. ローカル起動
+### 3. ローカル起動
 
 ```bash
 python -m venv .venv
@@ -109,7 +144,7 @@ docker compose up --build
 curl http://localhost:8000/healthz
 ```
 
-### 3. 公開URLをLINEのWebhook URLに設定
+### 4. 公開URLをLINEのWebhook URLに設定
 
 本番ではHTTPSで公開されたURLが必要です。
 
@@ -180,6 +215,7 @@ pytest -q
 | `app/ai_client.py` | OpenAI Responses API連携 |
 | `app/storage.py` | SQLiteログ |
 | `app/rules.yml` | 返信ルール |
+| `docs/preparation.md` | 事前準備チェックリスト |
 | `docs/setup.md` | LINE側の設定手順 |
 | `docs/architecture.md` | 詳細アーキテクチャ |
 | `docs/mcp.md` | MCP連携メモ |
